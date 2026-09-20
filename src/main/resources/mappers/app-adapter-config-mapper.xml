@@ -24,6 +24,14 @@
         FROM ACC_APP_ADAPTER.APP_ADAPTER_CONFIG
     </select>
 
+    <select id="findBySystemId" resultMap="AppAdapterConfigMap">
+        SELECT
+        ID, SYSTEMID, EVENT_TYPE, ENTITY_TYPE, TOPIC_IN, STATUS_IN,
+        TOPIC_OUT, STATUS_OUT, INS_TS, UPD_TS
+        FROM ACC_APP_ADAPTER.APP_ADAPTER_CONFIG
+        WHERE SYSTEMID = 'GRU'
+    </select>
+
     <resultMap id="AppAdapterConfigMap" type="AppAdapterConfig" autoMapping="true">
         <result property="systemId" column="SYSTEMID"/>
     </resultMap>

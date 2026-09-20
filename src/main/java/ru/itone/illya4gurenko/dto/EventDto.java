@@ -1,4 +1,4 @@
-package ru.itone.dto;
+package ru.itone.illya4gurenko.dto;
 
 import ru.itone.illya4gurenko.entity.enums.Type;
 

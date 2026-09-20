@@ -1,4 +1,4 @@
-package ru.itone.dto;
+package ru.itone.illya4gurenko.dto;
 
 import lombok.Data;
 import ru.itone.illya4gurenko.entity.enums.EntityType;

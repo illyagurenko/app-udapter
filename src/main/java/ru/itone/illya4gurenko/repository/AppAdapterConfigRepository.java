@@ -11,6 +11,8 @@ public interface AppAdapterConfigRepository {
 
     void save(AppAdapterConfig config);
 
+    AppAdapterConfig findBySystemId(String systemId);
+
     List<AppAdapterConfig> findAll();
 
 }
