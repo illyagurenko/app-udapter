@@ -23,6 +23,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+    // mybatis
+    implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter")
+
     // Драйверы баз данных
     implementation 'com.oracle.database.jdbc:ojdbc11'
     implementation 'org.jboss:jandex:3.2.3'
