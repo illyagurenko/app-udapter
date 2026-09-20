@@ -42,3 +42,10 @@ mybatis:
     map-underscore-to-camel-case: true
     default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
     jdbc-type-for-null: 'NULL'
+
+batch:
+  size: 100
+  timeout:
+    seconds: 10
+    worker:
+      delay: 10000
