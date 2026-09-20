@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ru.itone.illya4gurenko.repository.AppAdapterConfigRepository">
+
+    <insert id="save">
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
+            SELECT ACC_APP_ADAPTER.APP_ADAPTER_CONFIG_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO ACC_APP_ADAPTER.APP_ADAPTER_CONFIG (
+        SYSTEMID, EVENT_TYPE, ENTITY_TYPE, TOPIC_IN, STATUS_IN,
+        TOPIC_OUT, STATUS_OUT, INS_TS, UPD_TS
+        )
+        VALUES (
+        #{systemId}, #{eventType}, #{entityType}, #{topicIn}, #{statusIn},
+        #{topicOut}, #{statusOut}, #{insTs}, #{updTs}
+        )
+    </insert>
+
+    <select id="findAll" resultMap="AppAdapterConfigMap">
+        SELECT
+        ID, SYSTEMID, EVENT_TYPE, ENTITY_TYPE, TOPIC_IN, STATUS_IN,
+        TOPIC_OUT, STATUS_OUT, INS_TS, UPD_TS
+        FROM ACC_APP_ADAPTER.APP_ADAPTER_CONFIG
+    </select>
+
+    <resultMap id="AppAdapterConfigMap" type="AppAdapterConfig" autoMapping="true">
+        <result property="systemId" column="SYSTEMID"/>
+    </resultMap>
+</mapper>

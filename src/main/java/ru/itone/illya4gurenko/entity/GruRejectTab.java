@@ -14,7 +14,7 @@ public class GruRejectTab {
 
     private String systemAccount;
 
-    private Long vistaTanId;
+    private Long vistaTabId;
 
     private Long uterrario;
 
@@ -22,7 +22,7 @@ public class GruRejectTab {
 
     private BigDecimal newTBal;
 
-    private LocalDateTime frontSysTimestamp;
+    private LocalDateTime frontTimestamp;
 
     private String frontStatus;
 

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ru.itone.illya4gurenko.repository.AppAdapterIoMsgsRepository">
+
+    <insert id="save">
+        <!-- 1. Сначала дергаем Sequence и кладем результат в поле id объекта -->
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
+            SELECT ACC_APP_ADAPTER.APP_ADAPTER_IO_MSGS_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO ACC_APP_ADAPTER.APP_ADAPTER_IO_MSGS (
+        TRANS_ID, MSG_TYPE, DIR, MSG, INS_TS, NODE_ID
+        )
+        VALUES (
+        #{transId}, #{msgType}, #{dir}, #{msg}, #{insTs}, #{nodeId}
+        )
+    </insert>
+
+    <select id="findAll" resultMap="AppAdapterIoMsgsMap">
+        SELECT
+        ID, TRANS_ID, MSG_TYPE, DIR, MSG, INS_TS, NODE_ID
+        FROM ACC_APP_ADAPTER.APP_ADAPTER_IO_MSGS
+    </select>
+
+    <resultMap id="AppAdapterIoMsgsMap" type="AppAdapterIoMsgs" autoMapping="true"/>
+</mapper>

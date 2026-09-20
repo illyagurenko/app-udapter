@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ru.itone.illya4gurenko.repository.GruRejectTabRepository">
+
+    <insert id="save">
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
+            SELECT GRU.GRU_REJECT_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO GRU.GRU_REJECT_TAB (
+        SYSTEMACCOUNT, VISTA_TAB_ID, UTERRARIO, OLDTBAL, NEWTBAL,
+        FRONT_TIMESTAMP, FRONT_STATUS, REJECT_DESC, CHECK_STATUS,
+        CHECK_DESC, CHECK_USER, CHECK_TIMESTAMP, SVFE_LOAD_ID
+        )
+        VALUES (
+        #{systemAccount}, #{vistaTabId}, #{uterrario}, #{oldTBal}, #{newTBal},
+        #{frontTimestamp}, #{frontStatus}, #{rejectDesc}, #{checkStatus},
+        #{checkDesc}, #{checkUser}, #{checkTimestamp}, #{svfeLoadId}
+        )
+    </insert>
+
+    <select id="findAll" resultMap="GruRejectTabMap">
+        SELECT
+        ID, SYSTEMACCOUNT, VISTA_TAB_ID, UTERRARIO, OLDTBAL, NEWTBAL,
+        FRONT_TIMESTAMP, FRONT_STATUS, REJECT_DESC, CHECK_STATUS,
+        CHECK_DESC, CHECK_USER, CHECK_TIMESTAMP, SVFE_LOAD_ID
+        FROM GRU.GRU_REJECT_TAB
+    </select>
+
+    <resultMap id="GruRejectTabMap" type="GruRejectTab" autoMapping="true">
+        <id property="id" column="ID"/>
+        <result property="systemAccount" column="SYSTEMACCOUNT"/>
+        <result property="oldTBal" column="OLDTBAL"/>
+        <result property="newTBal" column="NEWTBAL"/>
+    </resultMap>
+</mapper>

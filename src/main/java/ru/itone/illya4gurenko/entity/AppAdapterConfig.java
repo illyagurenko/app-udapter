@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Data
 @Accessors(chain = true)
 public class AppAdapterConfig {
-
     private Long id;
 
     private MsgType systemId;

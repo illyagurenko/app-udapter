@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ru.itone.illya4gurenko.repository.GruVistaTabRepository">
+
+    <insert id="save">
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
+            SELECT GRU.GRU_VISTA_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO GRU.GRU_VISTA_TAB (
+        SYSTEMACCOUNT, CURRENCY, XALFA, OPERATION, TIME_STAMP,
+        POM_ID, UTERRARIO, OLDTBAL, NEWTBAL, ADD_INFO,
+        FILE_ID, FOC_STATUS, FOC_TS, FOC_TYPE
+        )
+        VALUES (
+        #{systemAccount}, #{currency}, #{xalfa}, #{operation}, #{timeStamp},
+        #{pomId}, #{uterrario}, #{oldTBal}, #{newTBal}, #{addInfo},
+        #{fileId}, #{focStatus}, #{focTS}, #{focType}
+        )
+    </insert>
+
+    <select id="findAll" resultMap="GruVistaTabMap">
+        SELECT
+        ID, SYSTEMACCOUNT, CURRENCY, XALFA, OPERATION, TIME_STAMP,
+        POM_ID, UTERRARIO, OLDTBAL, NEWTBAL, ADD_INFO,
+        FILE_ID, FOC_STATUS, FOC_TS, FOC_TYPE
+        FROM GRU.GRU_VISTA_TAB
+    </select>
+
+    <resultMap id="GruVistaTabMap" type="GruVistaTab" autoMapping="true">
+        <id property="id" column="ID"/>
+        <result property="systemAccount" column="SYSTEMACCOUNT"/>
+        <result property="oldTBal" column="OLDTBAL"/>
+        <result property="newTBal" column="NEWTBAL"/>
+    </resultMap>
+</mapper>
