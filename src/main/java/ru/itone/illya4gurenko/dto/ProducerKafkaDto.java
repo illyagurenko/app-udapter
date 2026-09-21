@@ -12,7 +12,7 @@ import java.util.List;
 public class ProducerKafkaDto {
     private Long actualTimestamp;
     private MsgType systemId;
-    private String reqeustId;
+    private String requestId;
     private EventType eventType;
     private List<EventDto> events;
 

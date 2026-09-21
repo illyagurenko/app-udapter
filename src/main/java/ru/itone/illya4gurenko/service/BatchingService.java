@@ -25,7 +25,7 @@ public class BatchingService {
     public ConsumerKafkaDto batchAndUpdate(int batchSize){
         List<GruVistaTab> rows = repository.fetchBatchForUpdate(batchSize);
 
-        if (rows.isEmpty()) {
+        if (rows == null || rows.isEmpty()) {
             return null;
         }
 
@@ -34,6 +34,7 @@ public class BatchingService {
                 .toList();
 
         repository.updateStatusByIds(ids, FocStatus.IN_PROCESS);
+
         List<EventDto> events = new ArrayList<>();
         rows.forEach((row) -> {
             row.setFocStatus(FocStatus.IN_PROCESS.name());
@@ -49,7 +50,7 @@ public class BatchingService {
         return new ConsumerKafkaDto()
                 .setActualTimestamp(System.currentTimeMillis())
                 .setSystemId(MsgType.GRU)
-                .setReqeustId("req-9f8e7d6c-5b4a")
+                .setRequestId("req-9f8e7d6c-5b4a")
                 .setEventType(EventType.BALANCE)
                 .setEntityType(EntityType.ACCOUNT)
                 .setEvents(events);

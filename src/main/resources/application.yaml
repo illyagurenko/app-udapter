@@ -46,7 +46,6 @@ mybatis:
 batch:
   size: 100
   timeout:
-    seconds: 10
     worker:
       delay: 10000
 pc:

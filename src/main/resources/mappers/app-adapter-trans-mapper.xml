@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="ru.itone.illya4gurenko.repository.AppAdapterTransRepository">
 
-    <insert id="save" keyProperty="id" useGeneratedKeys="true">
+    <insert id="save" keyProperty="id">
         <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
             SELECT ACC_APP_ADAPTER.APP_ADAPTER_TRANS_SEQ.NEXTVAL FROM DUAL
         </selectKey>
@@ -23,6 +23,15 @@
         RESP_CODE, RESP_DESC, INS_TS, UPD_TS
         FROM ACC_APP_ADAPTER.APP_ADAPTER_TRANS
     </select>
+
+    <update id="updateStatus">
+        UPDATE ACC_APP_ADAPTER.APP_ADAPTER_TRANS
+        SET STATUS = #{status},
+        RESP_CODE = #{respCode},
+        RESP_DESC = #{respDesc},
+        UPD_TS = SYSDATE
+        WHERE ID = #{id}
+    </update>
 
     <resultMap id="AppAdapterTransMap" type="AppAdapterTrans" autoMapping="true"/>
 </mapper>

@@ -27,15 +27,15 @@
         FROM GRU.GRU_VISTA_TAB
     </select>
 
-    <select id="batchAndUpdate" resultMap="GruVistaTabMap">
-        ID, SYSTEMACCOUNT, CURRENCY, XALFA, OPERATION, TIME_STAMP,
+    <select id="fetchBatchForUpdate" resultMap="GruVistaTabMap">
+        SELECT ID, SYSTEMACCOUNT, CURRENCY, XALFA, OPERATION, TIME_STAMP,
         POM_ID, UTERRARIO, OLDTBAL, NEWTBAL, ADD_INFO,
         FILE_ID, FOC_STATUS, FOC_TS, FOC_TYPE
         FROM GRU.GRU_VISTA_TAB
         WHERE ID IN (
             SELECT ID FROM (
                 SELECT ID FROM GRU.GRU_VISTA_TAB
-                WHERE FOC_STATUS != 'PROGRESS'
+                WHERE FOC_STATUS != 'IN_PROCESS'
                 ORDER BY id ASC
             ) WHERE ROWNUM &lt;= #{limit}
         )
@@ -44,7 +44,7 @@
 
     <update id="updateStatusByIds">
         UPDATE GRU.GRU_VISTA_TAB
-        SET FOC_STATUS = #{newStatus},
+        SET FOC_STATUS = #{newStatus}
         WHERE id IN
         <foreach item="id" collection="ids" open="(" separator="," close=")">
             #{id}

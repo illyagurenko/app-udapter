@@ -13,7 +13,7 @@ import java.util.List;
 public class ConsumerKafkaDto {
     private Long actualTimestamp;
     private MsgType systemId;
-    private String reqeustId;
+    private String requestId;
     private EventType eventType;
     private EntityType entityType;
     private List<EventDto> events;

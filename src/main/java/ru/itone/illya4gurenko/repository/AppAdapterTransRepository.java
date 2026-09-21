@@ -11,4 +11,6 @@ public interface AppAdapterTransRepository {
     void save(AppAdapterTrans trans);
 
     List<AppAdapterTrans> findAll();
+
+    void updateStatus(AppAdapterTrans trans);
 }
