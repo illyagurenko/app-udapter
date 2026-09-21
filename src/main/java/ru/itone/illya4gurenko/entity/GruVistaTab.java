@@ -2,6 +2,7 @@ package ru.itone.illya4gurenko.entity;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import ru.itone.illya4gurenko.entity.enums.FocStatus;
 import ru.itone.illya4gurenko.entity.enums.ProcType;
 import ru.itone.illya4gurenko.entity.enums.Type;
 
@@ -36,7 +37,7 @@ public class GruVistaTab {
 
     private Long fileId;
 
-    private String focStatus;
+    private FocStatus focStatus;
 
     private LocalDateTime focTS;
 

@@ -3,6 +3,7 @@ package ru.itone.illya4gurenko.entity;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import ru.itone.illya4gurenko.entity.enums.EventType;
+import ru.itone.illya4gurenko.entity.enums.FocStatus;
 import ru.itone.illya4gurenko.entity.enums.MsgType;
 
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ public class AppAdapterTrans {
 
     private String data;
 
-    private String status;
+    private FocStatus status;
 
     private String respCode;
 

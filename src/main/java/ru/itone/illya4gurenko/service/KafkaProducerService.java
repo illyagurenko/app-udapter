@@ -7,17 +7,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import ru.itone.illya4gurenko.dto.ConsumerKafkaDto;
+import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
 import ru.itone.illya4gurenko.entity.enums.Dir;
 import ru.itone.illya4gurenko.entity.enums.EventType;
+import ru.itone.illya4gurenko.entity.enums.FocStatus;
 import ru.itone.illya4gurenko.entity.enums.MsgType;
-import ru.itone.illya4gurenko.entity.enums.TransType;
 import ru.itone.illya4gurenko.repository.AppAdapterIoMsgsRepository;
 import ru.itone.illya4gurenko.repository.AppAdapterTransRepository;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +37,7 @@ public class KafkaProducerService {
     private final ObjectMapper objectMapper;
 
     public boolean produce(String topicOut) {
-        ConsumerKafkaDto curDto = batchingService.batchAndUpdate(batchSize);
+        ProducerKafkaDto curDto = batchingService.batchAndUpdate(batchSize);
         if (curDto == null || curDto.getEvents() == null || curDto.getEvents().isEmpty()) {
             return false;
         }
@@ -52,17 +52,17 @@ public class KafkaProducerService {
 
         AppAdapterTrans trans = new AppAdapterTrans()
                 .setSystemId(MsgType.GRU)
-                .setRequestId(UUID.randomUUID().toString())
+                .setRequestId(curDto.getRequestId())
                 .setEventType(EventType.BALANCE)
                 .setData(json)
-                .setStatus(TransType.PROGRESS.name())
+                .setStatus(FocStatus.IN_PROCESS)
                 .setInsTs(LocalDateTime.now());
         appAdapterTransRepository.save(trans);
 
         try {
             kafkaTemplate.send(topicOut, curDto.getRequestId(), json).get();
 
-            trans.setStatus(TransType.SUCCESS.name())
+            trans.setStatus(FocStatus.SUCCESS)
                     .setRespCode("0")
                     .setRespDesc("Sent successfully to Kafka");
             appAdapterTransRepository.updateStatus(trans);
@@ -70,7 +70,7 @@ public class KafkaProducerService {
         } catch (Exception e) {
             log.error("error send in topic  {}", topicOut, e);
 
-            trans.setStatus(TransType.ERROR.name())
+            trans.setStatus(FocStatus.ERROR)
                     .setRespCode("500")
                     .setRespDesc(e.getMessage());
             appAdapterTransRepository.updateStatus(trans);

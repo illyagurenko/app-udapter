@@ -3,63 +3,150 @@ package ru.itone.illya4gurenko.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import ru.itone.illya4gurenko.dto.ConsumerKafkaDto;
+import org.springframework.transaction.annotation.Transactional;
+import ru.itone.illya4gurenko.dto.*;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
+import ru.itone.illya4gurenko.entity.GruRejectTab;
 import ru.itone.illya4gurenko.entity.enums.Dir;
+import ru.itone.illya4gurenko.entity.enums.FocStatus;
 import ru.itone.illya4gurenko.entity.enums.MsgType;
 import ru.itone.illya4gurenko.repository.AppAdapterIoMsgsRepository;
 import ru.itone.illya4gurenko.repository.AppAdapterTransRepository;
+import ru.itone.illya4gurenko.repository.GruRejectTabRepository;
+import ru.itone.illya4gurenko.repository.GruVistaTabRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class KafkaConsumerService {
-//1. нужно распарсить строку и преобразовать в DTO
-//2. сходить существует ли такая сущность в ACC_APP_ADAPTER.APP_ADAPTER_TRANS
-//3. зафиксировать полученное json сообщение в IO MSG
-
-
-//4. проверить все ли записи ENTITY_ID были в патчке если не все то все записи  считаются ERROR
-//4. Если вся пачка помечена как ERROR то все записи в GRU.GRU_VISTA_TAB нужно пометить как ERROR
-//и все записи должны попасть в GRU_REJECT_TAB
-//5.Если есть успешные то мы должны изменить изменить СТАТУС на SUCCESS и изменить NEWTBAL и OLDTBAL
-//и поставить запись в SUCCESS
 
     @Value("${pc.number}")
     private Long numberPC;
 
     private final ObjectMapper objectMapper;
-    private final AppAdapterTransRepository transRepository;
-    private final AppAdapterIoMsgsRepository ioMsgsRepository;
-
+    private final AppAdapterTransRepository appAdapterTransRepository;
     private final AppAdapterIoMsgsRepository appAdapterIoMsgsRepository;
+    private final GruVistaTabRepository gruVistaTabRepository;
+    private final GruRejectTabRepository gruRejectTabRepository;
 
-    public void consume(ConsumerRecord<String, String> record){
-        String requestId = record.key();
-        AppAdapterTrans curTrans = transRepository.findByRequestId(requestId);
-        if (curTrans == null) {
-            log.warn("trans with requestId={} not found", requestId);
+    @Transactional
+    public void consume(String json) {
+        ConsumerKafkaDto consumerKafkaDto;
+        try {
+            consumerKafkaDto = objectMapper.readValue(json, ConsumerKafkaDto.class);
+        } catch (Exception e) {
+            log.error("error parse json: {}", json, e);
             return;
         }
-        String json = record.value();
-        try {
-            ConsumerKafkaDto consumerKafkaDto = objectMapper.readValue(json, ConsumerKafkaDto.class);
-            AppAdapterIoMsgs ioMsgs = new AppAdapterIoMsgs()
-                    .setTransId(curTrans.getId())
-                    .setMsgType(MsgType.GRU)
-                    .setDir(Dir.IN)
-                    .setMsg(json)
-                    .setInsTs(LocalDateTime.now())
-                    .setNodeId(numberPC);
-            appAdapterIoMsgsRepository.save(ioMsgs);
-        } catch (Exception e) {
-            log.error("error mapping consume", e);
+
+        String requestId = consumerKafkaDto.getRequestId();
+
+        AppAdapterTrans trans = appAdapterTransRepository.findByRequestId(requestId);
+        if (trans == null) {
+            log.error("trans with requestId='{}' not found", requestId);
+            return;
         }
+
+        AppAdapterIoMsgs ioMsg = new AppAdapterIoMsgs()
+                .setTransId(trans.getId())
+                .setMsgType(MsgType.GRU)
+                .setDir(Dir.IN)
+                .setMsg(json)
+                .setInsTs(LocalDateTime.now())
+                .setNodeId(numberPC);
+        appAdapterIoMsgsRepository.save(ioMsg);
+
+        ProducerKafkaDto sentDto;
+        try {
+            sentDto = objectMapper.readValue(trans.getData(), ProducerKafkaDto.class);
+        } catch (Exception e) {
+            log.error("error parse sent trans.data for transId={}", trans.getId(), e);
+            return;
+        }
+
+        if ("ERROR".equalsIgnoreCase(consumerKafkaDto.getStatus()) || consumerKafkaDto.getEvents() == null) {
+            String errorReason = consumerKafkaDto.getError() != null ? consumerKafkaDto.getError().getMessage() : "Общая ошибка пачки";
+            rejectEntireBatch(trans, sentDto, errorReason);
+            return;
+        }
+
+        Set<Long> sentIds = sentDto.getEvents().stream()
+                .map(ProducerEventDto::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> receivedEntityIds = consumerKafkaDto.getEvents().stream()
+                .map(ConsumerEventDto::getEntityId)
+                .collect(Collectors.toSet());
+
+        if (!receivedEntityIds.containsAll(sentIds)) {
+            rejectEntireBatch(trans, sentDto, "not all rows");
+            return;
+        }
+
+        for (ConsumerEventDto event : consumerKafkaDto.getEvents()) {
+            Long entityId = event.getEntityId();
+
+            if ("SUCCESS".equalsIgnoreCase(event.getStatus().name())) {
+                EventDataDto data = event.getData();
+                gruVistaTabRepository.updateBalanceAndStatus(
+                        entityId,
+                        data != null ? data.getOldTbal() : null,
+                        data != null ? data.getNewTbal() : null,
+                        FocStatus.SUCCESS
+                );
+            } else {
+                gruVistaTabRepository.updateStatusByIds(List.of(entityId), FocStatus.ERROR);
+
+                String errorMsg = event.getError() != null
+                        ? (event.getError().getCode() + ": " + event.getError().getMessage())
+                        : "Unknown error";
+
+                GruRejectTab reject = new GruRejectTab()
+                        .setVistaTabId(entityId)
+                        .setSystemAccount(event.getEntityValue())
+                        .setRejectDesc(errorMsg)
+                        .setFrontStatus("ERR")
+                        .setFrontTimestamp(LocalDateTime.now());
+                gruRejectTabRepository.save(reject);
+            }
+        }
+
+        trans.setStatus(FocStatus.SUCCESS);
+        trans.setRespCode("0");
+        trans.setRespDesc("SUCCESS");
+        appAdapterTransRepository.updateStatus(trans);
+    }
+
+    private void rejectEntireBatch(AppAdapterTrans trans, ProducerKafkaDto sentDto, String reason) {
+        log.warn("all batch error: {}. requestId={}", reason, trans.getRequestId());
+
+        List<Long> sentIds = sentDto.getEvents().stream()
+                .map(ProducerEventDto::getId)
+                .toList();
+
+
+        gruVistaTabRepository.updateStatusByIds(sentIds, FocStatus.ERROR);
+
+        for (ProducerEventDto event : sentDto.getEvents()) {
+            GruRejectTab reject = new GruRejectTab()
+                    .setVistaTabId(event.getId())
+                    .setSystemAccount(event.getSystemAccount())
+                    .setRejectDesc(reason)
+                    .setFrontStatus("ERR")
+                    .setFrontTimestamp(LocalDateTime.now());
+            gruRejectTabRepository.save(reject);
+        }
+
+        trans.setStatus(FocStatus.ERROR);
+        trans.setRespDesc(reason);
+        appAdapterTransRepository.updateStatus(trans);
     }
 }

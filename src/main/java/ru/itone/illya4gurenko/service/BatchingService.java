@@ -4,14 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import ru.itone.illya4gurenko.dto.ConsumerKafkaDto;
 import ru.itone.illya4gurenko.dto.ProducerEventDto;
+import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.GruVistaTab;
 import ru.itone.illya4gurenko.entity.enums.*;
 import ru.itone.illya4gurenko.repository.GruVistaTabRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class BatchingService {
     private final GruVistaTabRepository repository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public ConsumerKafkaDto batchAndUpdate(int batchSize){
+    public ProducerKafkaDto batchAndUpdate(int batchSize){
         List<GruVistaTab> rows = repository.fetchBatchForUpdate(batchSize);
 
         if (rows == null || rows.isEmpty()) {
@@ -34,8 +35,8 @@ public class BatchingService {
         repository.updateStatusByIds(ids, FocStatus.IN_PROCESS);
 
         List<ProducerEventDto> events = new ArrayList<>();
-        rows.forEach((row) -> {
-            row.setFocStatus(FocStatus.IN_PROCESS.name());
+        rows.forEach(row -> {
+            row.setFocStatus(FocStatus.IN_PROCESS);
             ProducerEventDto eventDto = new ProducerEventDto()
                     .setId(row.getId())
                     .setSystemAccount(row.getSystemAccount())
@@ -45,12 +46,11 @@ public class BatchingService {
             events.add(eventDto);
         });
 
-        return new ConsumerKafkaDto()
+        return new ProducerKafkaDto()
                 .setActualTimestamp(System.currentTimeMillis())
                 .setSystemId(MsgType.GRU)
-                .setRequestId("req-9f8e7d6c-5b4a")
+                .setRequestId(UUID.randomUUID().toString())
                 .setEventType(EventType.BALANCE)
-                .setEntityType(EntityType.ACCOUNT)
                 .setEvents(events);
     }
 }
