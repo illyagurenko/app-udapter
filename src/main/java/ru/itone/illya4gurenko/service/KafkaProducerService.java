@@ -1,15 +1,12 @@
 package ru.itone.illya4gurenko.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.itone.illya4gurenko.dto.ConsumerKafkaDto;
-import ru.itone.illya4gurenko.entity.AppAdapterConfig;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
 import ru.itone.illya4gurenko.entity.enums.Dir;
@@ -18,15 +15,14 @@ import ru.itone.illya4gurenko.entity.enums.MsgType;
 import ru.itone.illya4gurenko.entity.enums.TransType;
 import ru.itone.illya4gurenko.repository.AppAdapterIoMsgsRepository;
 import ru.itone.illya4gurenko.repository.AppAdapterTransRepository;
-import ru.itone.illya4gurenko.сonfig.AppInitializer;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GruVistaTabProducerService {
+public class KafkaProducerService {
 
     @Value("${batch.size}")
     private int batchSize;
@@ -37,11 +33,10 @@ public class GruVistaTabProducerService {
     private final BatchingService batchingService;
     private final AppAdapterTransRepository appAdapterTransRepository;
     private final AppAdapterIoMsgsRepository appAdapterIoMsgsRepository;
-    private final AppInitializer initializer;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    public boolean processOneBatch(String topicOut) {
+    public boolean produce(String topicOut) {
         ConsumerKafkaDto curDto = batchingService.batchAndUpdate(batchSize);
         if (curDto == null || curDto.getEvents() == null || curDto.getEvents().isEmpty()) {
             return false;
@@ -57,7 +52,7 @@ public class GruVistaTabProducerService {
 
         AppAdapterTrans trans = new AppAdapterTrans()
                 .setSystemId(MsgType.GRU)
-                .setRequestId(1L)
+                .setRequestId(UUID.randomUUID().toString())
                 .setEventType(EventType.BALANCE)
                 .setData(json)
                 .setStatus(TransType.PROGRESS.name())

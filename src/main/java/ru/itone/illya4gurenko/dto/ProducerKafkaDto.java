@@ -14,6 +14,6 @@ public class ProducerKafkaDto {
     private MsgType systemId;
     private String requestId;
     private EventType eventType;
-    private List<EventDto> events;
+    private List<ProducerEventDto> events;
 
 }

@@ -5,18 +5,11 @@ import lombok.experimental.Accessors;
 import ru.itone.illya4gurenko.entity.enums.Type;
 
 import java.math.BigDecimal;
+
 @Data
 @Accessors(chain = true)
-public class EventDto {
-
-    private Long id;
-
-    private String systemAccount;
-
-    private String currency;
-
-    private BigDecimal xalfa;
-
+public class EventDataDto {
+    private BigDecimal oldTbal;
+    private BigDecimal newTbal;
     private Type operation;
-
 }

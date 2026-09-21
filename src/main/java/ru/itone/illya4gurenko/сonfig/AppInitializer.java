@@ -13,7 +13,7 @@ import org.springframework.kafka.listener.MessageListener;
 import org.springframework.stereotype.Component;
 import ru.itone.illya4gurenko.entity.AppAdapterConfig;
 import ru.itone.illya4gurenko.repository.AppAdapterConfigRepository;
-import ru.itone.illya4gurenko.service.GruVistaTabProducerService;
+import ru.itone.illya4gurenko.service.KafkaProducerService;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,7 +29,7 @@ public class AppInitializer implements CommandLineRunner {
 
     private final AppAdapterConfigRepository repository;
     private final ConsumerFactory<String, String> consumerFactory;
-    private final GruVistaTabProducerService gruVistaTabProducerService;
+    private final KafkaProducerService gruVistaTabProducerService;
 
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
     private ExecutorService producerExecutor;
@@ -69,7 +69,7 @@ public class AppInitializer implements CommandLineRunner {
             log.info("producer running");
             while (isRunning.get()) {
                 try {
-                    boolean hasProcessedData = gruVistaTabProducerService.processOneBatch(topicOut);
+                    boolean hasProcessedData = gruVistaTabProducerService.produce(topicOut);
 
                     if (!hasProcessedData) {
                         Thread.sleep(delay);

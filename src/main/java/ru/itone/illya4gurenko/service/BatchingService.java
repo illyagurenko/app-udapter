@@ -5,14 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.itone.illya4gurenko.dto.ConsumerKafkaDto;
-import ru.itone.illya4gurenko.dto.EventDto;
+import ru.itone.illya4gurenko.dto.ProducerEventDto;
 import ru.itone.illya4gurenko.entity.GruVistaTab;
 import ru.itone.illya4gurenko.entity.enums.*;
 import ru.itone.illya4gurenko.repository.GruVistaTabRepository;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -35,10 +33,10 @@ public class BatchingService {
 
         repository.updateStatusByIds(ids, FocStatus.IN_PROCESS);
 
-        List<EventDto> events = new ArrayList<>();
+        List<ProducerEventDto> events = new ArrayList<>();
         rows.forEach((row) -> {
             row.setFocStatus(FocStatus.IN_PROCESS.name());
-            EventDto eventDto = new EventDto()
+            ProducerEventDto eventDto = new ProducerEventDto()
                     .setId(row.getId())
                     .setSystemAccount(row.getSystemAccount())
                     .setCurrency(row.getCurrency())

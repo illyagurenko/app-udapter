@@ -15,7 +15,7 @@ public class AppAdapterTrans {
 
     private MsgType systemId;
 
-    private Long requestId;
+    private String requestId;
 
     private EventType eventType;
 

@@ -33,5 +33,13 @@
         WHERE ID = #{id}
     </update>
 
+    <select id="findByRequestId" resultMap="AppAdapterTransMap">
+        SELECT
+        ID, SYSTEM_ID, REQUEST_ID, EVENT_TYPE, DATA, STATUS,
+        RESP_CODE, RESP_DESC, INS_TS, UPD_TS
+        FROM ACC_APP_ADAPTER.APP_ADAPTER_TRANS
+        WHERE REQUEST_ID = #{requestId}
+    </select>
+
     <resultMap id="AppAdapterTransMap" type="AppAdapterTrans" autoMapping="true"/>
 </mapper>

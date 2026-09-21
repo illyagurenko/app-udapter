@@ -12,10 +12,12 @@ import java.util.List;
 @Accessors(chain = true)
 public class ConsumerKafkaDto {
     private Long actualTimestamp;
-    private MsgType systemId;
+    private String systemId;
     private String requestId;
     private EventType eventType;
     private EntityType entityType;
-    private List<EventDto> events;
+    private String status;
+    private ErrorDto error;
+    private List<ConsumerEventDto> events;
 
 }
