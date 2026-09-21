@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface AppAdapterIoMsgsRepository {
 
-    void save(AppAdapterIoMsgs config);
+    void save(AppAdapterIoMsgs ioMsgs);
 
     List<AppAdapterIoMsgs> findAll();
 }

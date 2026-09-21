@@ -15,7 +15,7 @@ public class AppAdapterTrans {
 
     private MsgType systemId;
 
-    private Long svfeLoadId;
+    private Long requestId;
 
     private EventType eventType;
 

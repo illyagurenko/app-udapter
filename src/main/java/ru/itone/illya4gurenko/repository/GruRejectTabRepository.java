@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface GruRejectTabRepository {
 
-    void save(GruRejectTab config);
+    void save(GruRejectTab rejectTab);
 
     List<GruRejectTab> findAll();
 }

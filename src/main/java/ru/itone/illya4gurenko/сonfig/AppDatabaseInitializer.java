@@ -1,5 +1,6 @@
 package ru.itone.illya4gurenko.сonfig;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -12,9 +13,12 @@ public class AppDatabaseInitializer implements CommandLineRunner {
 
     private final AppAdapterConfigRepository repository;
 
+    @Getter
+    private AppAdapterConfig appAdapterConfig;
+
     @Override
     public void run(String... args) throws Exception {
-        AppAdapterConfig appAdapterConfig = repository.findBySystemId("GRU");
+        appAdapterConfig = repository.findBySystemId("GRU");
         //тут сконфигуррировать потоки кафки
     }
 }
