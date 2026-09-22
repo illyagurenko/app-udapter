@@ -48,5 +48,11 @@ batch:
   timeout:
     worker:
       delay: 10000
+app:
+  adapter:
+    producer:
+      pool-size: 1
+    consumer:
+      pool-size: 1
 pc:
   number: 162

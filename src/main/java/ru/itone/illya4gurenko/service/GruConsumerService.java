@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class KafkaConsumerService {
+public class GruConsumerService {
 
     @Value("${pc.number}")
     private Long numberPC;
@@ -39,6 +39,7 @@ public class KafkaConsumerService {
 
     @Transactional
     public void consume(String json) {
+        log.info("consume json:\n{}", json);
         ConsumerKafkaDto consumerKafkaDto;
         try {
             consumerKafkaDto = objectMapper.readValue(json, ConsumerKafkaDto.class);
@@ -48,6 +49,7 @@ public class KafkaConsumerService {
         }
 
         String requestId = consumerKafkaDto.getRequestId();
+        log.info("process response for requestId={}", requestId);
 
         AppAdapterTrans trans = appAdapterTransRepository.findByRequestId(requestId);
         if (trans == null) {
@@ -73,6 +75,7 @@ public class KafkaConsumerService {
         }
 
         if ("ERROR".equalsIgnoreCase(consumerKafkaDto.getStatus()) || consumerKafkaDto.getEvents() == null) {
+            log.warn("all batch with status ERROR");
             String errorReason = consumerKafkaDto.getError() != null ? consumerKafkaDto.getError().getMessage() : "Общая ошибка пачки";
             rejectEntireBatch(trans, sentDto, errorReason);
             return;
@@ -87,6 +90,7 @@ public class KafkaConsumerService {
                 .collect(Collectors.toSet());
 
         if (!receivedEntityIds.containsAll(sentIds)) {
+            log.error("post not all ENTITY_ID post: {}, get: {}", sentIds, receivedEntityIds);
             rejectEntireBatch(trans, sentDto, "not all rows");
             return;
         }
@@ -123,6 +127,7 @@ public class KafkaConsumerService {
         trans.setRespCode("0");
         trans.setRespDesc("SUCCESS");
         appAdapterTransRepository.updateStatus(trans);
+        log.info("success consume");
     }
 
     private void rejectEntireBatch(AppAdapterTrans trans, ProducerKafkaDto sentDto, String reason) {

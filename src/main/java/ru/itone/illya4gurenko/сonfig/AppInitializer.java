@@ -1,124 +1,103 @@
 package ru.itone.illya4gurenko.сonfig;
 
 import jakarta.annotation.PreDestroy;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.KafkaMessageListenerContainer;
-import org.springframework.kafka.listener.MessageListener;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import ru.itone.illya4gurenko.entity.AppAdapterConfig;
 import ru.itone.illya4gurenko.repository.AppAdapterConfigRepository;
-import ru.itone.illya4gurenko.service.KafkaProducerService;
+import ru.itone.illya4gurenko.service.GruConsumer;
+import ru.itone.illya4gurenko.service.GruProducer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class AppInitializer implements CommandLineRunner {
 
-    @Value("${batch.timeout.worker.delay}")
+    private final AppAdapterConfigRepository repository;
+    private final ApplicationContext applicationContext;
+
+    @Value("${batch.timeout.worker.delay:10000}")
     private Long delay;
 
-    private final AppAdapterConfigRepository repository;
-    private final ConsumerFactory<String, String> consumerFactory;
-    private final KafkaProducerService gruVistaTabProducerService;
+    @Value("${app.adapter.producer.pool-size:1}")
+    private int producerPoolSize;
 
-    private final AtomicBoolean isRunning = new AtomicBoolean(true);
+    @Value("${app.adapter.consumer.pool-size:1}")
+    private int consumerPoolSize;
+
     private ExecutorService producerExecutor;
-    private KafkaMessageListenerContainer<String, String> consumerContainer;
 
-    @Getter
-    private AppAdapterConfig config;
+    private final List<GruProducer> producers = new ArrayList<>();
+    private final List<GruConsumer> consumers = new ArrayList<>();
 
     @Override
     public void run(String... args) throws Exception {
-        config = repository.findBySystemId("GRU");
+        AppAdapterConfig config = repository.findBySystemId("GRU");
         if (config == null) {
-            log.error("config not found");
+            log.error("AppAdapterConfig for systemId 'GRU' not found!");
             return;
         }
 
-        initProducerThread(config);
-        initConsumerThread(config);
+        initProducers(config);
+        initConsumers(config);
     }
 
-    private void initProducerThread(AppAdapterConfig config) {
+    private void initProducers(AppAdapterConfig config) {
         if (!Long.valueOf(1L).equals(config.getStatusOut()) || config.getTopicOut() == null) {
-            log.warn("error init producer");
+            log.warn("Producer is disabled or topicOut is null. Skipping init.");
             return;
         }
 
-        final String topicOut = config.getTopicOut();
-        log.info("init producer in topic: {}", topicOut);
+        log.info("Initializing {} Producers...", producerPoolSize);
 
-        producerExecutor = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "producer-vista-thread");
+        producerExecutor = Executors.newFixedThreadPool(producerPoolSize, r -> {
+            Thread t = new Thread(r);
+            t.setName("producer-worker-thread");
             t.setDaemon(true);
             return t;
         });
 
-        producerExecutor.submit(() -> {
-            log.info("producer running");
-            while (isRunning.get()) {
-                try {
-                    boolean hasProcessedData = gruVistaTabProducerService.produce(topicOut);
-
-                    if (!hasProcessedData) {
-                        Thread.sleep(delay);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.info("thread interrupt");
-                    break;
-                } catch (Exception e) {
-                    log.error("tech error", e);
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
-        });
+        for (int i = 0; i < producerPoolSize; i++) {
+            GruProducer producer = applicationContext.getBean(GruProducer.class);
+            producer.init(config.getTopicOut(), delay, i + 1);
+            producers.add(producer);
+            producerExecutor.submit(producer);
+        }
     }
 
-    private void initConsumerThread(AppAdapterConfig config) {
+    private void initConsumers(AppAdapterConfig config) {
         if (!Long.valueOf(1L).equals(config.getStatusIn()) || config.getTopicIn() == null) {
-            log.warn("error init consumer");
+            log.warn("Consumer is disabled or topicIn is null. Skipping init.");
             return;
         }
 
-        final String topicIn = config.getTopicIn();
-        log.info("read topic: {}", topicIn);
+        log.info("Initializing {} Consumers...", consumerPoolSize);
 
-        ContainerProperties properties = new ContainerProperties(topicIn);
-        properties.setMessageListener((MessageListener<String, String>) record -> {
-            log.info("get message: key={}, value={}", record.key(), record.value());
-            // читаем топик выпоняем данные с ним
-        });
-
-        consumerContainer = new KafkaMessageListenerContainer<>(consumerFactory, properties);
-        consumerContainer.setBeanName("consumer-vista-container");
-        consumerContainer.start();
+        for (int i = 0; i < consumerPoolSize; i++) {
+            GruConsumer consumer = applicationContext.getBean(GruConsumer.class);
+            consumer.start(config.getTopicIn(), i + 1);
+            consumers.add(consumer);
+        }
     }
 
     @PreDestroy
     public void shutdown() {
-        isRunning.set(false);
+        log.info("Shutting down application, stopping producers and consumers...");
+
+        producers.forEach(GruProducer::stop);
         if (producerExecutor != null) {
             producerExecutor.shutdownNow();
         }
-        if (consumerContainer != null) {
-            consumerContainer.stop();
-        }
+
+        consumers.forEach(GruConsumer::stop);
     }
 }

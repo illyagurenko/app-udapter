@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import ru.itone.illya4gurenko.dto.ConsumerKafkaDto;
 import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
@@ -22,13 +22,13 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class KafkaProducerService {
+public class GruProducerService {
 
     @Value("${batch.size}")
     private int batchSize;
 
     @Value("${pc.number}")
-    private Long numberPC;
+    private Long nodeId;
 
     private final BatchingService batchingService;
     private final AppAdapterTransRepository appAdapterTransRepository;
@@ -39,12 +39,16 @@ public class KafkaProducerService {
     public boolean produce(String topicOut) {
         ProducerKafkaDto curDto = batchingService.batchAndUpdate(batchSize);
         if (curDto == null || curDto.getEvents() == null || curDto.getEvents().isEmpty()) {
+            log.trace("not rows with status WAIT");
             return false;
         }
+
+        log.info("found batch {} rows requestId={}", curDto.getEvents().size(), curDto.getRequestId());
 
         String json;
         try {
             json = objectMapper.writeValueAsString(curDto);
+            log.error("success mapping\n{}", json);
         } catch (Exception e) {
             log.error("error mapping", e);
             return false;
@@ -60,7 +64,12 @@ public class KafkaProducerService {
         appAdapterTransRepository.save(trans);
 
         try {
-            kafkaTemplate.send(topicOut, curDto.getRequestId(), json).get();
+            SendResult<String, String> res = kafkaTemplate.send(topicOut, curDto.getRequestId(), json).get();
+
+            log.info("success produce in kafka topic: {}, partition: {}, offset: {}",
+                    topicOut,
+                    res.getRecordMetadata().partition(),
+                    res.getRecordMetadata().offset());
 
             trans.setStatus(FocStatus.SUCCESS)
                     .setRespCode("0")
@@ -83,7 +92,7 @@ public class KafkaProducerService {
                 .setDir(Dir.OUT)
                 .setMsg(json)
                 .setInsTs(LocalDateTime.now())
-                .setNodeId(numberPC);
+                .setNodeId(nodeId);
         appAdapterIoMsgsRepository.save(ioMsgs);
 
         return true;
