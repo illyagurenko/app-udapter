@@ -23,4 +23,6 @@ public interface GruVistaTabRepository {
                                 @Param("oldTBal") BigDecimal oldTBal,
                                 @Param("newTBal") BigDecimal newTBal,
                                 @Param("status") FocStatus status);
+
+    void resetStuckRecords(@Param("minutes") int minutes);
 }

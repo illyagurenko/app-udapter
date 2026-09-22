@@ -42,15 +42,6 @@
         FOR UPDATE SKIP LOCKED
     </select>
 
-    <update id="updateStatusByIds">
-        UPDATE GRU.GRU_VISTA_TAB
-        SET FOC_STATUS = #{newStatus}
-        WHERE id IN
-        <foreach item="id" collection="ids" open="(" separator="," close=")">
-            #{id}
-        </foreach>
-    </update>
-
     <update id="updateBalanceAndStatus">
         UPDATE GRU.GRU_VISTA_TAB
         SET OLDTBAL = #{oldTBal},
@@ -58,6 +49,24 @@
         FOC_STATUS = #{status},
         FOC_TS = SYSDATE
         WHERE ID = #{id}
+    </update>
+
+    <update id="updateStatusByIds">
+        UPDATE GRU.GRU_VISTA_TAB
+        SET FOC_STATUS = #{newStatus},
+        FOC_TS = SYSDATE
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- Запрос для возврата зависших записей -->
+    <update id="resetStuckRecords">
+        UPDATE GRU.GRU_VISTA_TAB
+        SET FOC_STATUS = 'WAIT'
+        WHERE FOC_STATUS = 'IN_PROCESS'
+        AND FOC_TS &lt; SYSDATE - (#{minutes} / 1440)
     </update>
 
     <resultMap id="GruVistaTabMap" type="GruVistaTab" autoMapping="true">

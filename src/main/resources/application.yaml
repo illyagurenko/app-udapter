@@ -56,3 +56,10 @@ app:
       pool-size: 1
 pc:
   number: 162
+
+logging:
+  config: classpath:logback-spring.xml
+
+dynamic:
+  log:
+    path: ./logs/gru-adapter

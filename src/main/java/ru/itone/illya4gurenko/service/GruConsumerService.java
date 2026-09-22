@@ -44,6 +44,12 @@ public class GruConsumerService {
             return;
         }
 
+        if (trans.getStatus() == FocStatus.SUCCESS || trans.getStatus() == FocStatus.ERROR) {
+            log.warn("Message with requestId='{}' already processed with status: {}. Skipping duplicate.",
+                    requestId, trans.getStatus());
+            return;
+        }
+
         AppAdapterIoMsgs ioMsg = adapterEntityFactory.createIoMsg(trans.getId(), Dir.IN, json, numberPC);
         ioMsgsDao.save(ioMsg);
 

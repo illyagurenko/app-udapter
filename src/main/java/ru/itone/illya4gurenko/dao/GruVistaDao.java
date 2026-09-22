@@ -25,4 +25,8 @@ public class GruVistaDao {
     public void updateBalanceAndStatus(Long id, BigDecimal oldTBal, BigDecimal newTBal, FocStatus status) {
         repository.updateBalanceAndStatus(id, oldTBal, newTBal, status);
     }
+
+    public void resetStuckRecords(int minutes) {
+        repository.resetStuckRecords(minutes);
+    }
 }
