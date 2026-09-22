@@ -1,6 +1,5 @@
 package ru.itone.illya4gurenko.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,13 +12,9 @@ import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
 import ru.itone.illya4gurenko.entity.enums.Dir;
-import ru.itone.illya4gurenko.entity.enums.EventType;
 import ru.itone.illya4gurenko.entity.enums.FocStatus;
-import ru.itone.illya4gurenko.entity.enums.MsgType;
-import ru.itone.illya4gurenko.repository.AppAdapterIoMsgsRepository;
-import ru.itone.illya4gurenko.repository.AppAdapterTransRepository;
-
-import java.time.LocalDateTime;
+import ru.itone.illya4gurenko.utils.AdapterEntityFactory;
+import ru.itone.illya4gurenko.utils.MapperUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +31,8 @@ public class GruProducerService {
     private final AppAdapterTransDao transDao;
     private final AppAdapterIoMsgsDao ioMsgsDao;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper objectMapper;
+    private final MapperUtils mapperUtils;
+    private final AdapterEntityFactory adapterEntityFactory;
 
     public boolean produce(String topicOut) {
         ProducerKafkaDto curDto = batchingService.batchAndUpdate(batchSize);
@@ -47,22 +43,12 @@ public class GruProducerService {
 
         log.info("found batch {} rows requestId={}", curDto.getEvents().size(), curDto.getRequestId());
 
-        String json;
-        try {
-            json = objectMapper.writeValueAsString(curDto);
-            log.error("success mapping\n{}", json);
-        } catch (Exception e) {
-            log.error("error mapping", e);
+        String json = mapperUtils.tryMappingToStr(curDto);
+        if(json.isEmpty()){
             return false;
         }
 
-        AppAdapterTrans trans = new AppAdapterTrans()
-                .setSystemId(MsgType.GRU)
-                .setRequestId(curDto.getRequestId())
-                .setEventType(EventType.BALANCE)
-                .setData(json)
-                .setStatus(FocStatus.IN_PROCESS)
-                .setInsTs(LocalDateTime.now());
+        AppAdapterTrans trans = adapterEntityFactory.createTrans(curDto, json);
         transDao.save(trans);
 
         try {
@@ -88,13 +74,7 @@ public class GruProducerService {
             return true;
         }
 
-        AppAdapterIoMsgs ioMsgs = new AppAdapterIoMsgs()
-                .setTransId(trans.getId())
-                .setMsgType(MsgType.GRU)
-                .setDir(Dir.OUT)
-                .setMsg(json)
-                .setInsTs(LocalDateTime.now())
-                .setNodeId(nodeId);
+        AppAdapterIoMsgs ioMsgs = adapterEntityFactory.createIoMsg(trans.getId(), Dir.OUT, json, nodeId);
         ioMsgsDao.save(ioMsgs);
 
         return true;

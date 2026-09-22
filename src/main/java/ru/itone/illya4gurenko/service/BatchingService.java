@@ -10,6 +10,7 @@ import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.GruVistaTab;
 import ru.itone.illya4gurenko.entity.enums.*;
 import ru.itone.illya4gurenko.repository.GruVistaTabRepository;
+import ru.itone.illya4gurenko.utils.AdapterEntityFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +21,10 @@ import java.util.UUID;
 public class BatchingService {
 
     private final GruVistaDao gruVistaDao;
+    private final AdapterEntityFactory adapterEntityFactory;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public ProducerKafkaDto batchAndUpdate(int batchSize){
+    public ProducerKafkaDto batchAndUpdate(int batchSize) {
         List<GruVistaTab> rows = gruVistaDao.fetchBatchForUpdate(batchSize);
 
         if (rows == null || rows.isEmpty()) {
@@ -35,23 +37,6 @@ public class BatchingService {
 
         gruVistaDao.updateStatusByIds(ids, FocStatus.IN_PROCESS);
 
-        List<ProducerEventDto> events = new ArrayList<>();
-        rows.forEach(row -> {
-            row.setFocStatus(FocStatus.IN_PROCESS);
-            ProducerEventDto eventDto = new ProducerEventDto()
-                    .setId(row.getId())
-                    .setSystemAccount(row.getSystemAccount())
-                    .setCurrency(row.getCurrency())
-                    .setXalfa(row.getXalfa())
-                    .setOperation(row.getOperation());
-            events.add(eventDto);
-        });
-
-        return new ProducerKafkaDto()
-                .setActualTimestamp(System.currentTimeMillis())
-                .setSystemId(MsgType.GRU)
-                .setRequestId(UUID.randomUUID().toString())
-                .setEventType(EventType.BALANCE)
-                .setEvents(events);
+        return adapterEntityFactory.createProducerKafkaDto(rows);
     }
 }

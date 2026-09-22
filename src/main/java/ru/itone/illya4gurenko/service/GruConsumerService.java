@@ -21,6 +21,8 @@ import ru.itone.illya4gurenko.repository.AppAdapterIoMsgsRepository;
 import ru.itone.illya4gurenko.repository.AppAdapterTransRepository;
 import ru.itone.illya4gurenko.repository.GruRejectTabRepository;
 import ru.itone.illya4gurenko.repository.GruVistaTabRepository;
+import ru.itone.illya4gurenko.utils.AdapterEntityFactory;
+import ru.itone.illya4gurenko.utils.MapperUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,20 +37,18 @@ public class GruConsumerService {
     @Value("${pc.number}")
     private Long numberPC;
 
-    private final ObjectMapper objectMapper;
+    private final MapperUtils mapperUtils;
     private final AppAdapterTransDao transDao;
     private final AppAdapterIoMsgsDao ioMsgsDao;
     private final GruVistaDao gruVistaDao;
     private final GruRejectDao gruRejectDao;
+    private final AdapterEntityFactory adapterEntityFactory;
 
     @Transactional
     public void consume(String json) {
         log.info("consume json:\n{}", json);
-        ConsumerKafkaDto consumerKafkaDto;
-        try {
-            consumerKafkaDto = objectMapper.readValue(json, ConsumerKafkaDto.class);
-        } catch (Exception e) {
-            log.error("error parse json: {}", json, e);
+        ConsumerKafkaDto consumerKafkaDto = mapperUtils.tryMappingToConsumerKafkaDto(json);
+        if(consumerKafkaDto == null){
             return;
         }
 
@@ -61,20 +61,11 @@ public class GruConsumerService {
             return;
         }
 
-        AppAdapterIoMsgs ioMsg = new AppAdapterIoMsgs()
-                .setTransId(trans.getId())
-                .setMsgType(MsgType.GRU)
-                .setDir(Dir.IN)
-                .setMsg(json)
-                .setInsTs(LocalDateTime.now())
-                .setNodeId(numberPC);
+        AppAdapterIoMsgs ioMsg = adapterEntityFactory.createIoMsg(trans.getId(), Dir.IN, json, numberPC);
         ioMsgsDao.save(ioMsg);
 
-        ProducerKafkaDto sentDto;
-        try {
-            sentDto = objectMapper.readValue(trans.getData(), ProducerKafkaDto.class);
-        } catch (Exception e) {
-            log.error("error parse sent trans.data for transId={}", trans.getId(), e);
+        ProducerKafkaDto sentDto = mapperUtils.tryMappingToProducerKafkaDto(trans.getData());
+        if(sentDto == null){
             return;
         }
 
@@ -117,12 +108,7 @@ public class GruConsumerService {
                         ? (event.getError().getCode() + ": " + event.getError().getMessage())
                         : "Unknown error";
 
-                GruRejectTab reject = new GruRejectTab()
-                        .setVistaTabId(entityId)
-                        .setSystemAccount(event.getEntityValue())
-                        .setRejectDesc(errorMsg)
-                        .setFrontStatus("ERR")
-                        .setFrontTimestamp(LocalDateTime.now());
+                GruRejectTab reject = adapterEntityFactory.createRejectTab(event, "Unknown error");
                 gruRejectDao.save(reject);
             }
         }
@@ -145,12 +131,7 @@ public class GruConsumerService {
         gruVistaDao.updateStatusByIds(sentIds, FocStatus.ERROR);
 
         for (ProducerEventDto event : sentDto.getEvents()) {
-            GruRejectTab reject = new GruRejectTab()
-                    .setVistaTabId(event.getId())
-                    .setSystemAccount(event.getSystemAccount())
-                    .setRejectDesc(reason)
-                    .setFrontStatus("ERR")
-                    .setFrontTimestamp(LocalDateTime.now());
+            GruRejectTab reject = adapterEntityFactory.createRejectTab(event, reason);
             gruRejectDao.save(reject);
         }
 
