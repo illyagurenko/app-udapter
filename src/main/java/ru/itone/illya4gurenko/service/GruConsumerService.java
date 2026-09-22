@@ -6,6 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.itone.illya4gurenko.dao.AppAdapterIoMsgsDao;
+import ru.itone.illya4gurenko.dao.AppAdapterTransDao;
+import ru.itone.illya4gurenko.dao.GruRejectDao;
+import ru.itone.illya4gurenko.dao.GruVistaDao;
 import ru.itone.illya4gurenko.dto.*;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
@@ -32,10 +36,10 @@ public class GruConsumerService {
     private Long numberPC;
 
     private final ObjectMapper objectMapper;
-    private final AppAdapterTransRepository appAdapterTransRepository;
-    private final AppAdapterIoMsgsRepository appAdapterIoMsgsRepository;
-    private final GruVistaTabRepository gruVistaTabRepository;
-    private final GruRejectTabRepository gruRejectTabRepository;
+    private final AppAdapterTransDao transDao;
+    private final AppAdapterIoMsgsDao ioMsgsDao;
+    private final GruVistaDao gruVistaDao;
+    private final GruRejectDao gruRejectDao;
 
     @Transactional
     public void consume(String json) {
@@ -51,7 +55,7 @@ public class GruConsumerService {
         String requestId = consumerKafkaDto.getRequestId();
         log.info("process response for requestId={}", requestId);
 
-        AppAdapterTrans trans = appAdapterTransRepository.findByRequestId(requestId);
+        AppAdapterTrans trans = transDao.findByRequestId(requestId);
         if (trans == null) {
             log.error("trans with requestId='{}' not found", requestId);
             return;
@@ -64,7 +68,7 @@ public class GruConsumerService {
                 .setMsg(json)
                 .setInsTs(LocalDateTime.now())
                 .setNodeId(numberPC);
-        appAdapterIoMsgsRepository.save(ioMsg);
+        ioMsgsDao.save(ioMsg);
 
         ProducerKafkaDto sentDto;
         try {
@@ -100,14 +104,14 @@ public class GruConsumerService {
 
             if ("SUCCESS".equalsIgnoreCase(event.getStatus().name())) {
                 EventDataDto data = event.getData();
-                gruVistaTabRepository.updateBalanceAndStatus(
+                gruVistaDao.updateBalanceAndStatus(
                         entityId,
                         data != null ? data.getOldTbal() : null,
                         data != null ? data.getNewTbal() : null,
                         FocStatus.SUCCESS
                 );
             } else {
-                gruVistaTabRepository.updateStatusByIds(List.of(entityId), FocStatus.ERROR);
+                gruVistaDao.updateStatusByIds(List.of(entityId), FocStatus.ERROR);
 
                 String errorMsg = event.getError() != null
                         ? (event.getError().getCode() + ": " + event.getError().getMessage())
@@ -119,14 +123,14 @@ public class GruConsumerService {
                         .setRejectDesc(errorMsg)
                         .setFrontStatus("ERR")
                         .setFrontTimestamp(LocalDateTime.now());
-                gruRejectTabRepository.save(reject);
+                gruRejectDao.save(reject);
             }
         }
 
         trans.setStatus(FocStatus.SUCCESS);
         trans.setRespCode("0");
         trans.setRespDesc("SUCCESS");
-        appAdapterTransRepository.updateStatus(trans);
+        transDao.updateStatus(trans);
         log.info("success consume");
     }
 
@@ -138,7 +142,7 @@ public class GruConsumerService {
                 .toList();
 
 
-        gruVistaTabRepository.updateStatusByIds(sentIds, FocStatus.ERROR);
+        gruVistaDao.updateStatusByIds(sentIds, FocStatus.ERROR);
 
         for (ProducerEventDto event : sentDto.getEvents()) {
             GruRejectTab reject = new GruRejectTab()
@@ -147,11 +151,11 @@ public class GruConsumerService {
                     .setRejectDesc(reason)
                     .setFrontStatus("ERR")
                     .setFrontTimestamp(LocalDateTime.now());
-            gruRejectTabRepository.save(reject);
+            gruRejectDao.save(reject);
         }
 
         trans.setStatus(FocStatus.ERROR);
         trans.setRespDesc(reason);
-        appAdapterTransRepository.updateStatus(trans);
+        transDao.updateStatus(trans);
     }
 }

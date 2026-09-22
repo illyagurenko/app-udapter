@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.itone.illya4gurenko.dao.GruVistaDao;
 import ru.itone.illya4gurenko.dto.ProducerEventDto;
 import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.GruVistaTab;
@@ -18,11 +19,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BatchingService {
 
-    private final GruVistaTabRepository repository;
+    private final GruVistaDao gruVistaDao;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ProducerKafkaDto batchAndUpdate(int batchSize){
-        List<GruVistaTab> rows = repository.fetchBatchForUpdate(batchSize);
+        List<GruVistaTab> rows = gruVistaDao.fetchBatchForUpdate(batchSize);
 
         if (rows == null || rows.isEmpty()) {
             return null;
@@ -32,7 +33,7 @@ public class BatchingService {
                 .map(GruVistaTab::getId)
                 .toList();
 
-        repository.updateStatusByIds(ids, FocStatus.IN_PROCESS);
+        gruVistaDao.updateStatusByIds(ids, FocStatus.IN_PROCESS);
 
         List<ProducerEventDto> events = new ArrayList<>();
         rows.forEach(row -> {

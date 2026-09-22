@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import ru.itone.illya4gurenko.dao.AppAdapterConfigDao;
 import ru.itone.illya4gurenko.entity.AppAdapterConfig;
 import ru.itone.illya4gurenko.repository.AppAdapterConfigRepository;
 import ru.itone.illya4gurenko.service.GruConsumer;
@@ -22,7 +23,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class AppInitializer implements CommandLineRunner {
 
-    private final AppAdapterConfigRepository repository;
+    private final AppAdapterConfigDao configDao;
     private final ApplicationContext applicationContext;
 
     @Value("${batch.timeout.worker.delay:10000}")
@@ -41,7 +42,7 @@ public class AppInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        AppAdapterConfig config = repository.findBySystemId("GRU");
+        AppAdapterConfig config = configDao.getBySystemId("GRU"); // Обращение через DAO
         if (config == null) {
             log.error("AppAdapterConfig for systemId 'GRU' not found!");
             return;

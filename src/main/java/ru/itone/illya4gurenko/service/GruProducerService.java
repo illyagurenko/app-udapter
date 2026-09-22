@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+import ru.itone.illya4gurenko.dao.AppAdapterIoMsgsDao;
+import ru.itone.illya4gurenko.dao.AppAdapterTransDao;
 import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.AppAdapterIoMsgs;
 import ru.itone.illya4gurenko.entity.AppAdapterTrans;
@@ -31,8 +33,8 @@ public class GruProducerService {
     private Long nodeId;
 
     private final BatchingService batchingService;
-    private final AppAdapterTransRepository appAdapterTransRepository;
-    private final AppAdapterIoMsgsRepository appAdapterIoMsgsRepository;
+    private final AppAdapterTransDao transDao;
+    private final AppAdapterIoMsgsDao ioMsgsDao;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
@@ -61,7 +63,7 @@ public class GruProducerService {
                 .setData(json)
                 .setStatus(FocStatus.IN_PROCESS)
                 .setInsTs(LocalDateTime.now());
-        appAdapterTransRepository.save(trans);
+        transDao.save(trans);
 
         try {
             SendResult<String, String> res = kafkaTemplate.send(topicOut, curDto.getRequestId(), json).get();
@@ -74,7 +76,7 @@ public class GruProducerService {
             trans.setStatus(FocStatus.SUCCESS)
                     .setRespCode("0")
                     .setRespDesc("Sent successfully to Kafka");
-            appAdapterTransRepository.updateStatus(trans);
+            transDao.updateStatus(trans);
 
         } catch (Exception e) {
             log.error("error send in topic  {}", topicOut, e);
@@ -82,7 +84,7 @@ public class GruProducerService {
             trans.setStatus(FocStatus.ERROR)
                     .setRespCode("500")
                     .setRespDesc(e.getMessage());
-            appAdapterTransRepository.updateStatus(trans);
+            transDao.updateStatus(trans);
             return true;
         }
 
@@ -93,7 +95,7 @@ public class GruProducerService {
                 .setMsg(json)
                 .setInsTs(LocalDateTime.now())
                 .setNodeId(nodeId);
-        appAdapterIoMsgsRepository.save(ioMsgs);
+        ioMsgsDao.save(ioMsgs);
 
         return true;
     }
