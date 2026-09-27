@@ -11,37 +11,10 @@ spring:
     driver-class-name: oracle.jdbc.OracleDriver
   kafka:
     bootstrap-servers: localhost:9092
-    properties:
-      log.retention.ms: 259200000
-      log.cleanup.policy: delete
-
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      retries: 3
-
     consumer:
       group-id: my-consumer-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      properties:
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "*"
-
 mybatis:
-  type-aliases-package: ru.itone.illya4gurenko.entity
-  # config-location: classpath:mybatis-config.xml
-  mapper-locations:
-    - classpath:/mappers/app-adapter-config-mapper.xml
-    - classpath:/mappers/app-adapter-io-msgs-mapper.xml
-    - classpath:/mappers/app-adapter-trans-mapper.xml
-    - classpath:/mappers/gru-reject-tab-mapper.xml
-    - classpath:/mappers/gru-vista-tab-mapper.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
-    jdbc-type-for-null: 'NULL'
+  config-location: classpath:mybatis-config.xml
 
 batch:
   size: 100
@@ -58,7 +31,7 @@ pc:
   number: 162
 
 logging:
-  config: classpath:logback-spring.xml
+  config: classpath:file-logback.xml
 
 dynamic:
   log:

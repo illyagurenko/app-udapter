@@ -5,16 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.itone.illya4gurenko.dao.GruVistaDao;
-import ru.itone.illya4gurenko.dto.ProducerEventDto;
 import ru.itone.illya4gurenko.dto.ProducerKafkaDto;
 import ru.itone.illya4gurenko.entity.GruVistaTab;
-import ru.itone.illya4gurenko.entity.enums.*;
-import ru.itone.illya4gurenko.repository.GruVistaTabRepository;
+import ru.itone.illya4gurenko.entity.enums.FocStatus;
 import ru.itone.illya4gurenko.utils.AdapterEntityFactory;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

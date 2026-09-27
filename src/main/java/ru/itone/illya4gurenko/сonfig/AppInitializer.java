@@ -9,9 +9,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import ru.itone.illya4gurenko.dao.AppAdapterConfigDao;
 import ru.itone.illya4gurenko.entity.AppAdapterConfig;
-import ru.itone.illya4gurenko.repository.AppAdapterConfigRepository;
-import ru.itone.illya4gurenko.service.GruConsumer;
-import ru.itone.illya4gurenko.service.GruProducer;
+import ru.itone.illya4gurenko.service.GruConsumerWorker;
+import ru.itone.illya4gurenko.service.GruProducerWorker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +36,8 @@ public class AppInitializer implements CommandLineRunner {
 
     private ExecutorService producerExecutor;
 
-    private final List<GruProducer> producers = new ArrayList<>();
-    private final List<GruConsumer> consumers = new ArrayList<>();
+    private final List<GruProducerWorker> producers = new ArrayList<>();
+    private final List<GruConsumerWorker> consumers = new ArrayList<>();
 
     @Override
     public void run(String... args) throws Exception {
@@ -68,7 +67,7 @@ public class AppInitializer implements CommandLineRunner {
         });
 
         for (int i = 0; i < producerPoolSize; i++) {
-            GruProducer producer = applicationContext.getBean(GruProducer.class);
+            GruProducerWorker producer = applicationContext.getBean(GruProducerWorker.class);
             producer.init(config.getTopicOut(), delay, i + 1);
             producers.add(producer);
             producerExecutor.submit(producer);
@@ -84,7 +83,7 @@ public class AppInitializer implements CommandLineRunner {
         log.info("Initializing {} Consumers...", consumerPoolSize);
 
         for (int i = 0; i < consumerPoolSize; i++) {
-            GruConsumer consumer = applicationContext.getBean(GruConsumer.class);
+            GruConsumerWorker consumer = applicationContext.getBean(GruConsumerWorker.class);
             consumer.start(config.getTopicIn(), i + 1);
             consumers.add(consumer);
         }
@@ -94,11 +93,11 @@ public class AppInitializer implements CommandLineRunner {
     public void shutdown() {
         log.info("Shutting down application, stopping producers and consumers...");
 
-        producers.forEach(GruProducer::stop);
+        producers.forEach(GruProducerWorker::stop);
         if (producerExecutor != null) {
             producerExecutor.shutdownNow();
         }
 
-        consumers.forEach(GruConsumer::stop);
+        consumers.forEach(GruConsumerWorker::stop);
     }
 }

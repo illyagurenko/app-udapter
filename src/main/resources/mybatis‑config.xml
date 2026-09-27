@@ -3,8 +3,23 @@
         PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
+
     <settings>
         <setting name="mapUnderscoreToCamelCase" value="true"/>
         <setting name="defaultEnumTypeHandler" value="org.apache.ibatis.type.EnumTypeHandler"/>
+        <setting name="jdbcTypeForNull" value="NULL"/>
     </settings>
+
+    <typeAliases>
+        <package name="ru.itone.illya4gurenko.entity"/>
+    </typeAliases>
+
+    <mappers>
+        <mapper resource="mappers/app-adapter-config-mapper.xml"/>
+        <mapper resource="mappers/app-adapter-io-msgs-mapper.xml"/>
+        <mapper resource="mappers/app-adapter-trans-mapper.xml"/>
+        <mapper resource="mappers/gru-reject-tab-mapper.xml"/>
+        <mapper resource="mappers/gru-vista-tab-mapper.xml"/>
+    </mappers>
+
 </configuration>
