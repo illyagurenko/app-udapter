@@ -25,6 +25,7 @@ dependencies {
 
     // MyBatis
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+    implementation 'org.liquibase:liquibase-core'
 
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'

@@ -4,16 +4,36 @@
 <mapper namespace="ru.itone.illya4gurenko.repository.AppAdapterConfigRepository">
 
     <insert id="save">
-        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
-            SELECT ACC_APP_ADAPTER.APP_ADAPTER_CONFIG_SEQ.NEXTVAL FROM DUAL
+        <selectKey keyProperty="id"
+                   resultType="java.lang.Long"
+                   order="BEFORE">
+            SELECT ACC_APP_ADAPTER.APP_ADAPTER_CONFIG_SEQ.NEXTVAL
+            FROM DUAL
         </selectKey>
+
         INSERT INTO ACC_APP_ADAPTER.APP_ADAPTER_CONFIG (
-        SYSTEMID, EVENT_TYPE, ENTITY_TYPE, TOPIC_IN, STATUS_IN,
-        TOPIC_OUT, STATUS_OUT, INS_TS, UPD_TS
+        ID,
+        SYSTEMID,
+        EVENT_TYPE,
+        ENTITY_TYPE,
+        TOPIC_IN,
+        STATUS_IN,
+        TOPIC_OUT,
+        STATUS_OUT,
+        INS_TS,
+        UPD_TS
         )
         VALUES (
-        #{systemId}, #{eventType}, #{entityType}, #{topicIn}, #{statusIn},
-        #{topicOut}, #{statusOut}, #{insTs}, #{updTs}
+        #{id},
+        #{systemId},
+        #{eventType},
+        #{entityType},
+        #{topicIn},
+        #{statusIn},
+        #{topicOut},
+        #{statusOut},
+        #{insTs},
+        #{updTs}
         )
     </insert>
 

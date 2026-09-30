@@ -4,18 +4,44 @@
 <mapper namespace="ru.itone.illya4gurenko.repository.GruRejectTabRepository">
 
     <insert id="save">
-        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
-            SELECT GRU.GRU_REJECT_SEQ.NEXTVAL FROM DUAL
+        <selectKey keyProperty="id"
+                   resultType="java.lang.Long"
+                   order="BEFORE">
+            SELECT GRU.GRU_REJECT_SEQ.NEXTVAL
+            FROM DUAL
         </selectKey>
+
         INSERT INTO GRU.GRU_REJECT_TAB (
-        SYSTEMACCOUNT, VISTA_TAB_ID, UTERRARIO, OLDTBAL, NEWTBAL,
-        FRONT_TIMESTAMP, FRONT_STATUS, REJECT_DESC, CHECK_STATUS,
-        CHECK_DESC, CHECK_USER, CHECK_TIMESTAMP, SVFE_LOAD_ID
+        ID,
+        SYSTEMACCOUNT,
+        VISTA_TAB_ID,
+        UTERRARIO,
+        OLDTBAL,
+        NEWTBAL,
+        FRONT_TIMESTAMP,
+        FRONT_STATUS,
+        REJECT_DESC,
+        CHECK_STATUS,
+        CHECK_DESC,
+        CHECK_USER,
+        CHECK_TIMESTAMP,
+        SVFE_LOAD_ID
         )
         VALUES (
-        #{systemAccount}, #{vistaTabId}, #{uterrario}, #{oldTBal}, #{newTBal},
-        #{frontTimestamp}, #{frontStatus}, #{rejectDesc}, #{checkStatus},
-        #{checkDesc}, #{checkUser}, #{checkTimestamp}, #{svfeLoadId}
+        #{id},
+        #{systemAccount},
+        #{vistaTabId},
+        #{uterrario},
+        #{oldTBal},
+        #{newTBal},
+        #{frontTimestamp},
+        #{frontStatus},
+        #{rejectDesc},
+        #{checkStatus},
+        #{checkDesc},
+        #{checkUser},
+        #{checkTimestamp},
+        #{svfeLoadId}
         )
     </insert>
 

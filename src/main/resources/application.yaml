@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: publisher-change-food-card
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    parameters:
+      gruTopicIn: gru.balance.request
+      gruTopicOut: gru.balance.response
   datasource:
     url: jdbc:oracle:thin:@//localhost:1521/xe
     username: acc_app_adapter

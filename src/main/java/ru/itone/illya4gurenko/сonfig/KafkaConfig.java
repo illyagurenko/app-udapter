@@ -1,5 +1,6 @@
 package ru.itone.illya4gurenko.сonfig;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -10,12 +11,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import ru.itone.illya4gurenko.utils.TimeAndSizeUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static ru.itone.illya4gurenko.utils.TimeAndSizeUtils.*;
+
 @Configuration
+@RequiredArgsConstructor
 public class KafkaConfig {
+
+    private final TimeAndSizeUtils utils;
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
@@ -32,11 +39,11 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
 
-        configProps.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 67108864);
-        configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 60000);
+        configProps.put(ProducerConfig.BUFFER_MEMORY_CONFIG, mb(64));
+        configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, minutes(1));
         configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
 
-        configProps.put("log.retention.ms", "259200000");
+        configProps.put("log.retention.ms", days(3)+"");
         configProps.put("log.cleanup.policy", "delete");
 
         return new DefaultKafkaProducerFactory<>(configProps);

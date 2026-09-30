@@ -1,26 +1,57 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="ru.itone.illya4gurenko.repository.AppAdapterTransRepository">
 
-    <insert id="save" keyProperty="id">
-        <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE">
-            SELECT ACC_APP_ADAPTER.APP_ADAPTER_TRANS_SEQ.NEXTVAL FROM DUAL
+    <insert id="save">
+        <selectKey keyProperty="id"
+                   resultType="java.lang.Long"
+                   order="BEFORE">
+            SELECT ACC_APP_ADAPTER.APP_ADAPTER_TRANS_SEQ.NEXTVAL
+            FROM DUAL
         </selectKey>
+
         INSERT INTO ACC_APP_ADAPTER.APP_ADAPTER_TRANS (
-        SYSTEM_ID, REQUEST_ID, EVENT_TYPE, DATA, STATUS,
-        RESP_CODE, RESP_DESC, INS_TS, UPD_TS
+        ID,
+        SYSTEM_ID,
+        REQUEST_ID,
+        EVENT_TYPE,
+        DATA,
+        STATUS,
+        RESP_CODE,
+        RESP_DESC,
+        INS_TS,
+        UPD_TS
         )
         VALUES (
-        #{systemId}, #{requestId}, #{eventType}, #{data}, #{status},
-        #{respCode}, #{respDesc}, #{insTs}, #{updTs}
+        #{id},
+        #{systemId},
+        #{requestId},
+        #{eventType},
+        #{data},
+        #{status},
+        #{respCode},
+        #{respDesc},
+        #{insTs},
+        #{updTs}
         )
     </insert>
 
-    <select id="findAll" resultMap="AppAdapterTransMap">
+    <select id="findAll"
+            resultMap="AppAdapterTransMap">
         SELECT
-        ID, SYSTEM_ID, REQUEST_ID, EVENT_TYPE, DATA, STATUS,
-        RESP_CODE, RESP_DESC, INS_TS, UPD_TS
+        ID,
+        SYSTEM_ID,
+        REQUEST_ID,
+        EVENT_TYPE,
+        DATA,
+        STATUS,
+        RESP_CODE,
+        RESP_DESC,
+        INS_TS,
+        UPD_TS
         FROM ACC_APP_ADAPTER.APP_ADAPTER_TRANS
     </select>
 
@@ -33,13 +64,24 @@
         WHERE ID = #{id}
     </update>
 
-    <select id="findByRequestId" resultMap="AppAdapterTransMap">
+    <select id="findByRequestId"
+            resultMap="AppAdapterTransMap">
         SELECT
-        ID, SYSTEM_ID, REQUEST_ID, EVENT_TYPE, DATA, STATUS,
-        RESP_CODE, RESP_DESC, INS_TS, UPD_TS
+        ID,
+        SYSTEM_ID,
+        REQUEST_ID,
+        EVENT_TYPE,
+        DATA,
+        STATUS,
+        RESP_CODE,
+        RESP_DESC,
+        INS_TS,
+        UPD_TS
         FROM ACC_APP_ADAPTER.APP_ADAPTER_TRANS
         WHERE REQUEST_ID = #{requestId}
     </select>
 
-    <resultMap id="AppAdapterTransMap" type="AppAdapterTrans" autoMapping="true"/>
+    <resultMap id="AppAdapterTransMap"
+               type="AppAdapterTrans"
+               autoMapping="true"/>
 </mapper>
